@@ -1,238 +1,184 @@
-// Theme Management
-class ThemeManager {
-    constructor() {
-        this.theme = localStorage.getItem('theme') || 'light';
-        this.init();
-    }
+// Mobile Navigation Toggle
+const hamburger = document.querySelector('.hamburger');
+const navMenu = document.querySelector('.nav-menu');
 
-    init() {
-        this.applyTheme();
-        this.bindEvents();
-    }
+hamburger.addEventListener('click', () => {
+    hamburger.classList.toggle('active');
+    navMenu.classList.toggle('active');
+});
 
-    applyTheme() {
-        document.documentElement.setAttribute('data-theme', this.theme);
-        localStorage.setItem('theme', this.theme);
-    }
+// Close mobile menu when clicking on a link
+document.querySelectorAll('.nav-link').forEach(n => n.addEventListener('click', () => {
+    hamburger.classList.remove('active');
+    navMenu.classList.remove('active');
+}));
 
-    toggle() {
-        this.theme = this.theme === 'light' ? 'dark' : 'light';
-        this.applyTheme();
-    }
-
-    bindEvents() {
-        const toggleBtn = document.getElementById('theme-toggle');
-        if (toggleBtn) {
-            toggleBtn.addEventListener('click', () => this.toggle());
-        }
-    }
-}
-
-// Authentication Manager
-class AuthManager {
-    constructor() {
-        this.isAuthenticated = false;
-        this.user = null;
-        this.init();
-    }
-
-    init() {
-        this.checkAuthStatus();
-        this.bindEvents();
-    }
-
-    checkAuthStatus() {
-        const authData = localStorage.getItem('airway-auth');
-        if (authData) {
-            try {
-                const parsed = JSON.parse(authData);
-                this.isAuthenticated = true;
-                this.user = parsed.user;
-                this.showDashboard();
-            } catch (e) {
-                localStorage.removeItem('airway-auth');
-            }
-        }
-    }
-
-    async login(email, password) {
-        // Mock authentication - in real app, this would call your API
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                if (email && password) {
-                    const userData = {
-                        user: {
-                            id: "1",
-                            name: "John Pilot",
-                            email: email,
-                            role: "Captain",
-                            employeeId: "AW001",
-                            department: "Flight Operations",
-                        },
-                        token: "mock-jwt-token",
-                    };
-                    
-                    localStorage.setItem('airway-auth', JSON.stringify(userData));
-                    this.isAuthenticated = true;
-                    this.user = userData.user;
-                    resolve({ success: true });
-                } else {
-                    resolve({ success: false, error: 'Invalid credentials' });
-                }
-            }, 1000);
-        });
-    }
-
-    logout() {
-        localStorage.removeItem('airway-auth');
-        this.isAuthenticated = false;
-        this.user = null;
-        this.showLogin();
-    }
-
-    showDashboard() {
-        document.querySelector('.container').classList.add('hidden');
-        document.getElementById('dashboard').classList.remove('hidden');
-        
-        // Update user name in dashboard
-        const userNameEl = document.getElementById('user-name');
-        if (userNameEl && this.user) {
-            userNameEl.textContent = this.user.name;
-        }
-    }
-
-    showLogin() {
-        document.querySelector('.container').classList.remove('hidden');
-        document.getElementById('dashboard').classList.add('hidden');
-    }
-
-    bindEvents() {
-        // Login form
-        const loginForm = document.getElementById('login-form');
-        const submitBtn = document.getElementById('submit-btn');
-        
-        if (loginForm) {
-            loginForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                
-                const email = document.getElementById('email').value;
-                const password = document.getElementById('password').value;
-                
-                // Show loading state
-                submitBtn.classList.add('loading');
-                submitBtn.disabled = true;
-                
-                try {
-                    const result = await this.login(email, password);
-                    
-                    if (result.success) {
-                        this.showDashboard();
-                    } else {
-                        alert('Login failed: ' + result.error);
-                    }
-                } catch (error) {
-                    alert('Login failed: ' + error.message);
-                } finally {
-                    // Remove loading state
-                    submitBtn.classList.remove('loading');
-                    submitBtn.disabled = false;
-                }
+// Smooth scrolling for navigation links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
             });
         }
+    });
+});
 
-        // Logout button
-        const logoutBtn = document.getElementById('logout-btn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => {
-                this.logout();
-            });
+// Navbar background change on scroll
+window.addEventListener('scroll', () => {
+    const navbar = document.querySelector('.navbar');
+    if (window.scrollY > 50) {
+        navbar.style.background = 'rgba(255, 255, 255, 0.95)';
+        navbar.style.backdropFilter = 'blur(10px)';
+    } else {
+        navbar.style.background = '#fff';
+        navbar.style.backdropFilter = 'none';
+    }
+});
+
+// Intersection Observer for animations
+const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+};
+
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.style.opacity = '1';
+            entry.target.style.transform = 'translateY(0)';
         }
-    }
-}
+    });
+}, observerOptions);
 
-// Dashboard Manager
-class DashboardManager {
-    constructor() {
-        this.stats = {
-            activeFlights: 24,
-            todayRevenue: 45230,
-            availableAircraft: 18,
-            totalAircraft: 20,
-            activeEmployees: 156
-        };
-        this.init();
-    }
-
-    init() {
-        this.updateStats();
-        this.startRealTimeUpdates();
-    }
-
-    updateStats() {
-        // Simulate real-time updates
-        this.stats.activeFlights = Math.floor(Math.random() * 10) + 20;
-        this.stats.todayRevenue += Math.floor(Math.random() * 1000);
-        this.stats.availableAircraft = Math.floor(Math.random() * 3) + 17;
-        
-        // Update DOM if dashboard is visible
-        const dashboard = document.getElementById('dashboard');
-        if (dashboard && !dashboard.classList.contains('hidden')) {
-            this.renderStats();
-        }
-    }
-
-    renderStats() {
-        const cards = document.querySelectorAll('.dashboard-card');
-        if (cards.length >= 4) {
-            cards[0].querySelector('.stat-number').textContent = this.stats.activeFlights;
-            cards[1].querySelector('.stat-number').textContent = `$${this.stats.todayRevenue.toLocaleString()}`;
-            cards[2].querySelector('.stat-number').textContent = `${this.stats.availableAircraft}/${this.stats.totalAircraft}`;
-            cards[3].querySelector('.stat-number').textContent = this.stats.activeEmployees;
-        }
-    }
-
-    startRealTimeUpdates() {
-        // Update stats every 30 seconds
-        setInterval(() => {
-            this.updateStats();
-        }, 30000);
-    }
-}
-
-// Initialize Application
+// Observe elements for animation
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize managers
-    const themeManager = new ThemeManager();
-    const authManager = new AuthManager();
-    const dashboardManager = new DashboardManager();
+    const animateElements = document.querySelectorAll('.team-member, .event-card, .outcome-item, .domain-item');
+    
+    animateElements.forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(20px)';
+        el.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+        observer.observe(el);
+    });
+});
 
-    // Add some interactive animations
-    const featureCards = document.querySelectorAll('.feature-card');
-    featureCards.forEach(card => {
-        card.addEventListener('mouseenter', () => {
-            card.style.transform = 'translateY(-4px) scale(1.02)';
-        });
-        
-        card.addEventListener('mouseleave', () => {
-            card.style.transform = 'translateY(0) scale(1)';
-        });
+// Active navigation link highlighting
+window.addEventListener('scroll', () => {
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.nav-link');
+    
+    let current = '';
+    sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.clientHeight;
+        if (scrollY >= (sectionTop - 200)) {
+            current = section.getAttribute('id');
+        }
     });
 
-    // Add form validation feedback
-    const inputs = document.querySelectorAll('.form-input');
-    inputs.forEach(input => {
-        input.addEventListener('blur', () => {
-            if (input.value && input.checkValidity()) {
-                input.style.borderColor = '#10b981';
-            } else if (input.value) {
-                input.style.borderColor = '#ef4444';
-            }
-        });
-
-        input.addEventListener('focus', () => {
-            input.style.borderColor = 'var(--primary-color)';
-        });
+    navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === `#${current}`) {
+            link.classList.add('active');
+        }
     });
+});
 
-    console.log('SkyLine Airways Employee Portal initialized successfully!');
+// Add active class styling
+const style = document.createElement('style');
+style.textContent = `
+    .nav-link.active {
+        color: #2563eb !important;
+        position: relative;
+    }
+    .nav-link.active::after {
+        content: '';
+        position: absolute;
+        bottom: -5px;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: #2563eb;
+    }
+`;
+document.head.appendChild(style);
+
+// Form submission handler (placeholder)
+document.addEventListener('DOMContentLoaded', () => {
+    const applyButton = document.querySelector('.recruitment .btn-primary');
+    if (applyButton) {
+        applyButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            alert('Application form will be available soon! Follow our social media for updates.');
+        });
+    }
+});
+
+// Typing effect for hero title
+function typeWriter(element, text, speed = 100) {
+    let i = 0;
+    element.innerHTML = '';
+    
+    function type() {
+        if (i < text.length) {
+            element.innerHTML += text.charAt(i);
+            i++;
+            setTimeout(type, speed);
+        }
+    }
+    type();
+}
+
+// Initialize typing effect when page loads
+window.addEventListener('load', () => {
+    const heroTitle = document.querySelector('.hero h1');
+    if (heroTitle) {
+        const originalText = heroTitle.innerHTML;
+        typeWriter(heroTitle, originalText, 50);
+    }
+});
+
+// Counter animation for statistics
+function animateCounter(element, target, duration = 2000) {
+    let start = 0;
+    const increment = target / (duration / 16);
+    
+    function updateCounter() {
+        start += increment;
+        if (start < target) {
+            element.textContent = Math.floor(start);
+            requestAnimationFrame(updateCounter);
+        } else {
+            element.textContent = target;
+        }
+    }
+    updateCounter();
+}
+
+// Initialize counters when they come into view
+const counterObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const counter = entry.target;
+            const target = parseInt(counter.getAttribute('data-target'));
+            animateCounter(counter, target);
+            counterObserver.unobserve(counter);
+        }
+    });
+});
+
+// Add data-target attributes to statistics and observe them
+document.addEventListener('DOMContentLoaded', () => {
+    const stats = document.querySelectorAll('.event-stats span');
+    stats.forEach(stat => {
+        const number = parseInt(stat.textContent);
+        if (!isNaN(number)) {
+            stat.setAttribute('data-target', number);
+            counterObserver.observe(stat);
+        }
+    });
 });
